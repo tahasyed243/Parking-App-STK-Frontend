@@ -1,7 +1,7 @@
 import axios from "axios";
 
-const API = "http://localhost:5000/api/spots";
-  
+const API = "https://parking-app-stk-backend-production.up.railway.app/api";
+
 export const getSpots = async () => {
   const res = await axios.get(API);
   return res.data;
