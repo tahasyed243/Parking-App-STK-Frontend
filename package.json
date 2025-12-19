@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "homepage": "https://tahasyed243.github.io/Parking-App-STK",
+  "homepage": "https://tahasyed243.github.io/Parking-App-STK-Frontend",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
