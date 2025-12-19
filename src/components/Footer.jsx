@@ -72,10 +72,10 @@ export default function Footer() {
     ];
 
     return (
-        <footer className="bg-gray-900 text-white
-         sm:w-screen md:w-screen pt-12 pb-8 opacity-80 w-screen">
-            <div className="container mx-auto px-4">
-                <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-8 mb-8">
+        <footer className="bg-gray-900 text-white pt-12 pb-8 opacity-80 w-screen
+        md:w-screen sm:w-screen lg:w-screen overflow-x-hidden">
+            <div className="container mx-auto px-4 md:px-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 mb-8">
                     {/* Brand Column */}
                     <div className="lg:col-span-2">
                         <NavLink to="/" className="flex items-center gap-3 mb-6">
@@ -115,7 +115,7 @@ export default function Footer() {
                                     <li key={link.path}>
                                         <NavLink
                                             to={link.path}
-                                            className="text-gray-400 hover:text-cyan-300 transition hover:pl-2"
+                                            className="text-gray-400 hover:text-cyan-300 transition hover:pl-2 block"
                                         >
                                             {link.label}
                                         </NavLink>
@@ -124,6 +124,46 @@ export default function Footer() {
                             </ul>
                         </div>
                     ))}
+                </div>
+
+                {/* Support Hours & Refund Info */}
+                <div className="mb-8 p-6 bg-gray-800/50 rounded-xl border border-gray-700">
+                    <div className="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <h3 className="text-lg font-semibold mb-3 text-cyan-300">Support Hours</h3>
+                            <div className="space-y-2 text-gray-300">
+                                <div className="flex items-center gap-2">
+                                    <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span>24/7 Email Support</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                    </svg>
+                                    <span>Phone Support: 9 AM – 6 PM EST</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-semibold mb-3 text-cyan-300">Quick Actions</h3>
+                            <div className="space-y-2 text-gray-300">
+                                <div className="flex items-center gap-2">
+                                    <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                                    </svg>
+                                    <span>30-Day Full Refund Policy</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                    </svg>
+                                    <span>14-Day Free Trial Available</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Contact Info */}
@@ -148,14 +188,14 @@ export default function Footer() {
 
                 {/* Bottom Bar */}
                 <div className="pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <p className="text-gray-400 text-sm">
+                    <p className="text-gray-400 text-sm text-center md:text-left">
                         © {currentYear} ParkEase. All rights reserved.
                     </p>
-                    <div className="flex items-center gap-6 text-sm text-gray-400">
+                    <div className="flex items-center gap-6 text-sm text-gray-400 flex-wrap justify-center">
                         <span className="flex items-center gap-2">
                             Made with <span className="text-red-500">❤️</span> by Syed Taha
                         </span>
-                        <span>•</span>
+                        <span className="hidden sm:inline">•</span>
                         <span>Park responsibly 🚘</span>
                     </div>
                 </div>

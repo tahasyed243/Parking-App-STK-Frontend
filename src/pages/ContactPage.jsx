@@ -137,7 +137,8 @@ export default function ContactPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-indigo-950 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-indigo-950 
+    w-screen md:w-screen sm:w-screen lg:w-screen relative overflow-hidden">
       <PublicNavbar />
       {/* Snowfall Effect */}
       <Snowfall
