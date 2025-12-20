@@ -1,117 +1,279 @@
 import React, { useEffect, useState } from "react";
 import { getSpots, reserveSpot, occupySpot, freeSpot } from "../api/parkingApi";
-import { formatRemaining } from "../utils/formatTime";
 import { motion } from "framer-motion";
 import Navbar from "../components/Navbar";
 import Snowfall from "react-snowfall";
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function TableView() {
   const [spots, setSpots] = useState([]);
-  const [refresh, setRefresh] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
 
-  useEffect(() => { fetchSpots(); }, [refresh]);
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    fetchSpots();
+
+    const interval = setInterval(fetchSpots, 30000);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('resize', checkMobile);
+    };
+  }, []);
 
   const fetchSpots = async () => {
-    const data = await getSpots();
-    setSpots(data);
+    try {
+      setLoading(true);
+      const data = await getSpots();
+      setSpots(data);
+    } catch (error) {
+      toast.error("Failed to load spots");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleReserve = async (spot) => {
-    const name = prompt("Enter your name (optional)") || "Guest";
-    const minutes = Number(prompt("Duration in minutes", "30")) || 30;
-    await reserveSpot(spot._id, name, minutes);
-    setRefresh(r => r + 1);
+    const name = prompt("Enter your name for reservation") || "Guest";
+    if (!name.trim()) return;
+
+    try {
+      await reserveSpot(spot.id, name);
+      toast.success(`Spot ${spot.spotNumber} reserved!`);
+      fetchSpots();
+    } catch (error) {
+      toast.error("Failed to reserve spot");
+    }
   };
 
-  const handleOccupy = async (spot) => { await occupySpot(spot._id); setRefresh(r => r + 1); };
-  const handleFree = async (spot) => { await freeSpot(spot._id); setRefresh(r => r + 1); };
+  const handleOccupy = async (spot) => {
+    try {
+      await occupySpot(spot.id);
+      toast.success(`Spot ${spot.spotNumber} occupied!`);
+      fetchSpots();
+    } catch (error) {
+      toast.error("Failed to occupy spot");
+    }
+  };
+
+  const handleFree = async (spot) => {
+    try {
+      await freeSpot(spot.id);
+      toast.success(`Spot ${spot.spotNumber} freed!`);
+      fetchSpots();
+    } catch (error) {
+      toast.error("Failed to free spot");
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "free": return "text-green-500";
+      case "reserved": return "text-yellow-500";
+      case "occupied": return "text-red-500";
+      default: return "text-gray-400";
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case "free": return "✅";
+      case "reserved": return "⏳";
+      case "occupied": return "🚗";
+      default: return "❓";
+    }
+  };
 
   return (
-    <div className="bg-gray-800">
-      <Snowfall
-        style={{
-          position: "fixed",
-          width: "100vw",
-          height: "100vh",
-          zIndex: 0
-        }}
-        color="white"
-        snowflakeCount={200}
-        speed={[0.5, 3]}
-        wind={[-0.5, 2]}
-        radius={[0.5, 4]}
-        rotationSpeed={[-1, 1]}
-      />
-      <Navbar />
-      <div className="overflow-x-auto px-4 sm:px-6 lg:px-10 py-6">
-        <h2 className="text-2xl font-bold text-gray-300 mb-6 text-center">Parking Spots Table</h2>
+    <div className="bg-gray-900 min-h-screen">
+      {!isMobile && (
+        <Snowfall
+          style={{
+            position: "fixed",
+            width: "100vw",
+            height: "100vh",
+            zIndex: 0
+          }}
+          color="white"
+          snowflakeCount={150}
+          speed={[0.5, 3]}
+          wind={[-0.5, 2]}
+          radius={[0.5, 4]}
+          rotationSpeed={[-1, 1]}
+        />
+      )}
 
-        <table className="min-w-full bg-gray-900 rounded-xl shadow-lg overflow-hidden">
-          <thead className="bg-linear-to-r from-purple-600 to-indigo-600 text-white">
-            <tr>
-              <th className="p-3 text-left">#</th>
-              <th className="p-3 text-left">Status</th>
-              <th className="p-3 text-left">Reserved By</th>
-              <th className="p-3 text-left">Remaining</th>
-              <th className="p-3 text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {spots.map((spot, index) => (
-              <motion.tr
-                key={spot._id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className="border-b hover:bg-gray-50 transition"
-              >
-                <td className="p-3 text-green-400 font-medium">{spot.number}</td>
-                <td className={`p-3 font-semibold capitalize ${spot.status === "free" ? "text-green-600" :
-                  spot.status === "reserved" ? "text-yellow-600" :
-                    "text-red-600"
-                  }`}>
-                  {spot.status}
-                </td>
-                <td className="p-3 text-green-400">{spot.reservedBy || "-"}</td>
-                <td className="p-3 text-green-400">{spot.status === "reserved" ? formatRemaining(spot.reservedUntil) : "-"}</td>
-                <td className="p-3 flex justify-center gap-2 flex-wrap">
-                  {spot.status === "free" && (
-                    <button
-                      onClick={() => handleReserve(spot)}
-                      className="bg-linear-to-r from-green-400 to-green-600 text-white px-4 py-1 rounded-lg shadow hover:shadow-lg transition"
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        theme="dark"
+      />
+
+      <Navbar />
+
+      <div className="px-4 sm:px-6 lg:px-8 py-6 relative z-10">
+        {/* Header */}
+        <div className="mb-8 text-center">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">
+            Parking Spots Overview
+          </h1>
+          <p className="text-gray-400 mt-2">Manage all parking spots in one table view</p>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <div className="bg-gray-800 p-4 rounded-xl">
+            <div className="text-gray-400 text-sm">Total Spots</div>
+            <div className="text-2xl font-bold text-white">{spots.length}</div>
+          </div>
+          <div className="bg-gray-800 p-4 rounded-xl">
+            <div className="text-gray-400 text-sm">Available</div>
+            <div className="text-2xl font-bold text-green-500">
+              {spots.filter(s => s.status === "free").length}
+            </div>
+          </div>
+          <div className="bg-gray-800 p-4 rounded-xl">
+            <div className="text-gray-400 text-sm">Occupied</div>
+            <div className="text-2xl font-bold text-red-500">
+              {spots.filter(s => s.status === "occupied").length}
+            </div>
+          </div>
+        </div>
+
+        {/* Table */}
+        <div className="bg-gray-800 rounded-xl shadow-xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gradient-to-r from-purple-600 to-indigo-600">
+                  <th className="p-4 text-left text-white font-semibold">Spot #</th>
+                  <th className="p-4 text-left text-white font-semibold">Status</th>
+                  <th className="p-4 text-left text-white font-semibold">Reserved By</th>
+                  <th className="p-4 text-left text-white font-semibold">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan="4" className="p-8 text-center">
+                      <div className="flex justify-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
+                      </div>
+                      <p className="text-gray-400 mt-2">Loading spots...</p>
+                    </td>
+                  </tr>
+                ) : spots.length === 0 ? (
+                  <tr>
+                    <td colSpan="4" className="p-8 text-center text-gray-400">
+                      No parking spots found
+                    </td>
+                  </tr>
+                ) : (
+                  spots.map((spot, index) => (
+                    <motion.tr
+                      key={spot.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="border-b border-gray-700 hover:bg-gray-750 transition-colors"
                     >
-                      Reserve
-                    </button>
-                  )}
-                  {spot.status === "reserved" && (
-                    <>
-                      <button
-                        onClick={() => handleOccupy(spot)}
-                        className="bg-linear-to-r from-purple-500 to-purple-700 text-white px-4 py-1 rounded-lg shadow hover:shadow-lg transition"
-                      >
-                        Occupy
-                      </button>
-                      <button
-                        onClick={() => handleFree(spot)}
-                        className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-1 rounded-lg shadow transition"
-                      >
-                        Cancel
-                      </button>
-                    </>
-                  )}
-                  {spot.status === "occupied" && (
-                    <button
-                      onClick={() => handleFree(spot)}
-                      className="bg-linear-to-r from-red-500 to-red-700 text-white px-4 py-1 rounded-lg shadow hover:shadow-lg transition"
-                    >
-                      Free
-                    </button>
-                  )}
-                </td>
-              </motion.tr>
-            ))}
-          </tbody>
-        </table>
+                      <td className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
+                            <span className="font-bold text-white">
+                              {spot.spotNumber}
+                            </span>
+                          </div>
+                          <div>
+                            <div className="text-white font-medium">Spot {spot.spotNumber}</div>
+                            <div className="text-gray-400 text-sm">ID: {spot.id}</div>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className="p-4">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl">{getStatusIcon(spot.status)}</span>
+                          <span className={`font-semibold capitalize ${getStatusColor(spot.status)}`}>
+                            {spot.status}
+                          </span>
+                        </div>
+                        {spot.status === "reserved" && spot.reservedUntil && (
+                          <div className="text-gray-400 text-sm mt-1">
+                            Until: {new Date(spot.reservedUntil).toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </div>
+                        )}
+                      </td>
+
+                      <td className="p-4">
+                        <div className="text-white">
+                          {spot.reservedBy || (
+                            <span className="text-gray-400 italic">Not reserved</span>
+                          )}
+                        </div>
+                        {spot.reservedBy && spot.status === "occupied" && (
+                          <div className="text-gray-400 text-sm">
+                            Currently occupied
+                          </div>
+                        )}
+                      </td>
+
+                      <td className="p-4">
+                        <div className="flex flex-wrap gap-2">
+                          {spot.status === "free" && (
+                            <button
+                              onClick={() => handleReserve(spot)}
+                              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium"
+                            >
+                              Reserve
+                            </button>
+                          )}
+
+                          {spot.status === "reserved" && (
+                            <>
+                              <button
+                                onClick={() => handleOccupy(spot)}
+                                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium"
+                              >
+                                Occupy
+                              </button>
+                              <button
+                                onClick={() => handleFree(spot)}
+                                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors font-medium"
+                              >
+                                Cancel
+                              </button>
+                            </>
+                          )}
+
+                          {spot.status === "occupied" && (
+                            <button
+                              onClick={() => handleFree(spot)}
+                              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium"
+                            >
+                              Free
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </motion.tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-6 text-center text-gray-500 text-sm">
+          <p>Total: {spots.length} spots • Auto-refresh every 30 seconds</p>
+        </div>
       </div>
     </div>
   );

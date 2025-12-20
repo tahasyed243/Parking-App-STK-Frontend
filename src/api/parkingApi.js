@@ -1,23 +1,29 @@
 import axios from "axios";
 
-const API = "https://parking-app-stk-backend-production.up.railway.app/api";
+// Use deployed Railway backend
+const API = "https://parking-app-stk-backend-production.up.railway.app/api/spots";
 
 export const getSpots = async () => {
-  const res = await axios.get(API);
-  return res.data;
+  try {
+    const res = await axios.get(API);
+    return res.data.data;
+  } catch (error) {
+    console.error("❌ API Error:", error.message);
+    return [];
+  }
 };
 
-export const reserveSpot = async (id, name, minutes) => {
-  const res = await axios.post(`${API}/reserve/${id}`, { name, minutes });
-  return res.data;
+export const reserveSpot = async (id, name) => {
+  const res = await axios.put(`${API}/${id}/reserve`, { name });
+  return res.data.spot;
 };
 
 export const occupySpot = async (id) => {
-  const res = await axios.post(`${API}/occupy/${id}`);
-  return res.data;
+  const res = await axios.put(`${API}/${id}/occupy`);
+  return res.data.spot;
 };
 
 export const freeSpot = async (id) => {
-  const res = await axios.post(`${API}/free/${id}`);
-  return res.data;
+  const res = await axios.put(`${API}/${id}/free`);
+  return res.data.spot;
 };

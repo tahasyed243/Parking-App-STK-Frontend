@@ -1,113 +1,280 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { getSpots } from "../api/parkingApi";
-import { div } from "framer-motion/client";
 import Navbar from "../components/Navbar";
 import Snowfall from "react-snowfall";
+import { useNavigate } from "react-router-dom";
 
 export default function Dashboard() {
-    const [stats, setStats] = useState({ free: 0, reserved: 0, occupied: 0 });
-    const user = JSON.parse(localStorage.getItem("user"));
+    const [stats, setStats] = useState({
+        free: 0,
+        reserved: 0,
+        occupied: 0,
+        total: 0
+    });
+    const [loading, setLoading] = useState(true);
+    const [user, setUser] = useState({ name: "Guest", email: "" });
+    const [isMobile, setIsMobile] = useState(false);
+    const navigate = useNavigate();
 
     useEffect(() => {
-        const fetchStats = async () => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+
+        // Load user data
+        try {
+            const userData = localStorage.getItem("user");
+            if (userData) {
+                setUser(JSON.parse(userData));
+            }
+        } catch (error) {
+            console.error("Error loading user data:", error);
+        }
+
+        fetchStats();
+
+        // Auto-refresh every 30 seconds
+        const interval = setInterval(fetchStats, 30000);
+
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('resize', checkMobile);
+        };
+    }, []);
+
+    const fetchStats = async () => {
+        try {
+            setLoading(true);
             const spots = await getSpots();
             setStats({
                 free: spots.filter((s) => s.status === "free").length,
                 reserved: spots.filter((s) => s.status === "reserved").length,
                 occupied: spots.filter((s) => s.status === "occupied").length,
+                total: spots.length
             });
-        };
-        fetchStats();
-    }, []);
+        } catch (error) {
+            console.error("Failed to fetch stats:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const getStatCards = () => [
+        {
+            label: "Free",
+            value: stats.free,
+            color: "from-green-500 to-emerald-600",
+            icon: "✅",
+            description: "Available spots"
+        },
+        {
+            label: "Reserved",
+            value: stats.reserved,
+            color: "from-yellow-500 to-amber-600",
+            icon: "⏳",
+            description: "Booked spots"
+        },
+        {
+            label: "Occupied",
+            value: stats.occupied,
+            color: "from-red-500 to-rose-600",
+            icon: "🚗",
+            description: "In use spots"
+        }
+    ];
+
+    const quickActions = [
+        {
+            label: "Grid View",
+            icon: "🗺️",
+            color: "from-blue-500 to-cyan-600",
+            onClick: () => navigate("/grid")
+        },
+        {
+            label: "Table View",
+            icon: "📋",
+            color: "from-purple-500 to-pink-600",
+            onClick: () => navigate("/table")
+        },
+        {
+            label: "Refresh",
+            icon: "🔄",
+            color: "from-gray-700 to-gray-800",
+            onClick: fetchStats
+        }
+    ];
 
     return (
-        <div className="bg-gray-800">
-            <Snowfall
-                style={{
-                    position: "fixed",
-                    width: "100vw",
-                    height: "100vh",
-                    zIndex: 0
-                }}
-                color="white"
-                snowflakeCount={200}
-                speed={[0.5, 3]}
-                wind={[-0.5, 2]}
-                radius={[0.5, 4]}
-                rotationSpeed={[-1, 1]}
-            />
+        <div className="bg-gray-900 min-h-screen">
+            {!isMobile && (
+                <Snowfall
+                    style={{
+                        position: "fixed",
+                        width: "100vw",
+                        height: "100vh",
+                        zIndex: 0
+                    }}
+                    color="white"
+                    snowflakeCount={150}
+                    speed={[0.5, 3]}
+                    wind={[-0.5, 2]}
+                    radius={[0.5, 4]}
+                    rotationSpeed={[-1, 1]}
+                />
+            )}
+
             <Navbar />
-            <div className="min-h-[105vh] flex flex-col items-center opacity-80 justify-center px-4 bg-gray-800">
-                {/* Glass Main Card */}
+
+            <div className="relative z-10 px-4 py-8">
+                {/* Main Dashboard Card */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8 }}
-                    className="w-full max-w-5xl bg-white/30 backdrop-blur-3xl 
-                    border border-white/20 rounded-3xl shadow-[0_35px_60px_-15px_rgba(0,0,0,0.3)] 
-                    p-10 sm:p-14 text-center relative overflow-hidden"
+                    transition={{ duration: 0.6 }}
+                    className="max-w-6xl mx-auto"
                 >
-                    {/* Floating Car Icon */}
+                    {/* Header Section */}
+                    <div className="text-center mb-10">
+                        <motion.div
+                            animate={{ y: [0, -10, 0] }}
+                            transition={{ repeat: Infinity, duration: 3 }}
+                            className="inline-block mb-6"
+                        >
+                            <div className="w-28 h-28 bg-gradient-to-br from-purple-600 to-blue-600 rounded-full flex items-center justify-center text-5xl shadow-2xl">
+                                🅿️
+                            </div>
+                        </motion.div>
+
+                        <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent mb-4">
+                            Parking Dashboard
+                        </h1>
+
+                        <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 inline-block max-w-2xl">
+                            <p className="text-gray-300 text-lg mb-2">
+                                Welcome back, <span className="font-bold text-white">{user.name}</span>
+                            </p>
+                            {user.email && (
+                                <p className="text-gray-400 text-sm">
+                                    {user.email}
+                                </p>
+                            )}
+                            <div className="mt-4 text-gray-500 text-sm">
+                                Manage your parking spots efficiently
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Total Spots Card */}
                     <motion.div
-                        animate={{ y: [0, 20, 0] }}
-                        transition={{ repeat: Infinity, duration: 2 }}
-                        className="w-32 h-32 mx-auto mb-6 rounded-full opacity-100
-                         bg-linear-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white text-6xl shadow-2xl"
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ delay: 0.2 }}
+                        className="bg-gradient-to-r from-gray-800 to-gray-900 rounded-2xl p-8 mb-8 text-center shadow-2xl border border-gray-700"
                     >
-                        🚗
+                        <div className="text-5xl font-bold text-white mb-2">
+                            {stats.total}
+                        </div>
+                        <div className="text-gray-400 text-lg">
+                            Total Parking Spots
+                        </div>
+                        <div className="mt-4 text-gray-500 text-sm">
+                            Auto-refreshes every 30 seconds
+                        </div>
                     </motion.div>
 
-                    {/* Title */}
-                    <h1 className="text-5xl sm:text-6xl font-extrabold text-gray-800 mb-2 tracking-wide">
-                        Parking Management
-                    </h1>
-
-                    {/* Logged-in User Info */}
-                    <p className="text-gray-200 text-lg mb-6">
-                        Welcome, <span className="font-bold text-3xl dashed">{user?.name}</span> ({user?.email})
-                    </p>
-
-                    {/* Stats Cards */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                        {["Free", "Reserved", "Occupied"].map((status, idx) => {
-                            const colors = [
-                                { bg: "from-green-400 to-green-600", hover: "hover:bg-green-600", text: "text-white" },
-                                { bg: "from-yellow-400 to-yellow-600", hover: "hover:bg-yellow-600", text: "text-white" },
-                                { bg: "from-red-400 to-red-600", hover: "hover:bg-red-800", text: "text-white" },
-                            ];
-                            const value = [stats.free, stats.reserved, stats.occupied][idx];
-                            return (
-                                <motion.div
-                                    whileHover={{ scale: 1.1 }}
-                                    key={status}
-                                    className={`rounded-3xl p-6 shadow-2xl relative overflow-hidden bg-linear-to-tr ${colors[idx].bg}`}
-                                >
-                                    <div className="absolute -top-16 -right-16 w-36 h-36 rounded-full opacity-20 blur-3xl bg-white/30"></div>
-                                    <h3 className={`font-bold text-lg ${colors[idx].text}`}>{status}</h3>
-                                    <p className={`text-4xl mt-2 font-extrabold ${colors[idx].text}`}>{value}</p>
-                                    <p className={`text-sm mt-1 ${colors[idx].text}/80`}>
-                                        {status === "Free"
-                                            ? "Available parking"
-                                            : status === "Reserved"
-                                                ? "Booked spots"
-                                                : "Currently in use"}
-                                    </p>
-                                </motion.div>
-                            );
-                        })}
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        {getStatCards().map((stat, idx) => (
+                            <motion.div
+                                key={stat.label}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.3 + idx * 0.1 }}
+                                whileHover={{ scale: 1.05, y: -5 }}
+                                className={`bg-gradient-to-br ${stat.color} rounded-2xl p-6 shadow-2xl border border-white/10`}
+                            >
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="text-3xl">{stat.icon}</div>
+                                    <div className="text-white/80 text-sm font-medium px-3 py-1 bg-white/20 rounded-full">
+                                        {stat.label}
+                                    </div>
+                                </div>
+                                <div className="text-4xl font-bold text-white mb-2">
+                                    {loading ? "..." : stat.value}
+                                </div>
+                                <div className="text-white/80">
+                                    {stat.description}
+                                </div>
+                                <div className="mt-4 text-white/60 text-sm">
+                                    {Math.round((stat.value / stats.total) * 100) || 0}% of total
+                                </div>
+                            </motion.div>
+                        ))}
                     </div>
+
+                    {/* Quick Actions */}
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.6 }}
+                        className="mb-10"
+                    >
+                        <h2 className="text-2xl font-bold text-white mb-6 text-center">
+                            Quick Actions
+                        </h2>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            {quickActions.map((action, idx) => (
+                                <motion.button
+                                    key={action.label}
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={action.onClick}
+                                    className={`bg-gradient-to-r ${action.color} rounded-xl p-5 text-white font-medium shadow-lg hover:shadow-xl transition-all flex flex-col items-center gap-3`}
+                                >
+                                    <span className="text-3xl">{action.icon}</span>
+                                    <span>{action.label}</span>
+                                </motion.button>
+                            ))}
+                        </div>
+                    </motion.div>
+
+                    {/* Status Legend */}
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.8 }}
+                        className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700"
+                    >
+                        <h3 className="text-xl font-bold text-white mb-4 text-center">
+                            Status Guide
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                                <span className="text-gray-300">Free - Available for reservation</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                                <span className="text-gray-300">Reserved - Booked temporarily</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                                <span className="text-gray-300">Occupied - Currently in use</span>
+                            </div>
+                        </div>
+                    </motion.div>
                 </motion.div>
 
                 {/* Footer */}
-                <motion.p
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.8 }}
-                    className="text-xs text-gray-400 mt-10"
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 1 }}
+                    className="text-center mt-10 text-gray-500 text-sm"
                 >
-                    Use the navigation bar to switch between views
-                </motion.p>
+                    <p>ParkEase Dashboard • v1.0.0 • Real-time monitoring</p>
+                </motion.div>
             </div>
         </div>
     );
