@@ -1,13 +1,13 @@
 // src/api/authApi.js
-
 import axios from "axios";
 
-const API = "https://parking-app-stk-backend-production.up.railway.app";
+// Railway deployed backend base URL
+const API = "https://parking-app-stk-backend-production.up.railway.app/api/auth";
 
 export const loginUser = async (credentials) => {
   try {
     const res = await axios.post(`${API}/login`, credentials);
-    return res.data;
+    return res.data; // { success, message, token, user }
   } catch (error) {
     console.error("Login error:", error?.response?.data || error);
     throw error;
@@ -16,8 +16,8 @@ export const loginUser = async (credentials) => {
 
 export const signupUser = async (userData) => {
   try {
-    const res = await axios.post(`${API}/signup`, userData);
-    return res.data;
+    const res = await axios.post(`${API}/register`, userData);
+    return res.data; // { success, message, token, user }
   } catch (error) {
     console.error("Signup error:", error?.response?.data || error);
     throw error;
