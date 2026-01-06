@@ -29,3 +29,4 @@ export const freeSpot = async (id) => {
   const res = await axios.put(`${API}/${id}/free`);
   return res.data.spot;
 };
+ 

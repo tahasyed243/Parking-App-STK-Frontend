@@ -2,7 +2,7 @@
 
 import axios from "axios";
 
-const API = "https://parking-app-stk-backend-production.up.railway.app/api/auth";
+const API = "https://parking-app-stk-backend-production.up.railway.app";
 
 export const loginUser = async (credentials) => {
   try {
